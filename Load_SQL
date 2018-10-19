@@ -69,4 +69,5 @@ From hmlr_prices.post_2004 t1
 INNER Join hmlr_prices.post_2004 t2
 ON t1.postcode = t2.postcode
 	AND t1.paon = t2.paon
-	AND t1.saon = t2.saon;
+	AND t1.saon = t2.saon
+	order by t1.postcode, t1.paon, t1.saon	;
