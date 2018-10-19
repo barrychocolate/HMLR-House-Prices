@@ -1,0 +1,26 @@
+--Create a schema in the postgres database
+CREATE SCHEMA hmlr_prices;
+
+--Create a table to load the data into
+CREATE TABLE hmlr_prices.prices
+(
+    uid character varying PRIMARY KEY,
+    price integer,
+    sale_date date,
+    postcode character varying(12),
+    type character varying(1),
+    new character varying(1),
+    duration character varying(1),
+    paon character varying,
+    saon character varying,
+    street text,
+    locality text,
+    town text,
+    district text,
+    county text,
+    category character varying(1),
+	status character varying(1)
+);
+
+--Copy the data from the CSV into the table
+COPY HMLR.prices FROM 'insert your path here\pp-complete.csv' CSV;
