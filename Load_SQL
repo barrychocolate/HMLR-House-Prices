@@ -24,3 +24,37 @@ CREATE TABLE hmlr_prices.prices
 
 --Copy the data from the CSV into the table
 COPY HMLR.prices FROM 'insert your path here\pp-complete.csv' CSV;
+
+--There is no UPRN or oter unique key for each property
+--To compare changes in price for the same property you will need to use a compund key comprising of postcode, poan, soan
+
+--There are a number of observations (33,000 in the october 2018 dataset) with no postcode
+--There are also a number of observations (3,700 in the october 2018 dataset) that have a postcode but no poan or soan.  
+--These will be excluded from our analysis
+
+--Create a table with the earliest pre 2004 price for each unique property 
+SELECT
+  UID, price, sale_date, postcode, paon, saon 
+  INTO pre_2004
+FROM (
+  SELECT
+    ROW_NUMBER() OVER (PARTITION BY postcode, paon, saon ORDER BY postcode, paon, saon, sale_date) AS r,
+    t.*
+  FROM
+    hmlr_prices.prices t) x
+WHERE
+  x.r <= 1 and x.postcode <>'' AND (x.paon <> '' OR x.saon <> '');
+  
+  
+--Create a table with the latest post 2003 price for each unique property 
+SELECT
+  UID, price, sale_date, postcode, paon, saon 
+  INTO post_2004
+FROM (
+  SELECT
+    ROW_NUMBER() OVER (PARTITION BY postcode, paon, saon ORDER BY postcode, paon, saon, sale_date DESC) AS r,
+    t.*
+  FROM
+    hmlr_prices.prices t) x
+WHERE
+  x.r <= 1 and x.postcode <>'' AND (x.paon <> '' OR x.saon <> '');
