@@ -75,7 +75,8 @@ SET myUPRN = (select myUPRN from hmlr_prices.UniqueProperties WHERE postcode = a
 --TO FIX - Can't get the partition part to work to give min and max by myUPRN
 select myUPRN, min(sale_date)as min_date, max(sale_date) as max_date, min(price) as min_price, max(price) as max_price 
 --OVER(PARTITION BY myUPRN) 
-into price_analysis
+into hmlr_prices.price_analysis
 from hmlr_prices.ComparablePrices 
 group by myUPRN
+
   
