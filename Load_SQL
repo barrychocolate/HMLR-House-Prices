@@ -26,40 +26,49 @@ CREATE TABLE hmlr_prices.prices
 COPY HMLR.prices FROM 'insert your path here\pp-complete.csv' CSV;
 
 --There is no UPRN or oter unique key for each property
---To compare changes in price for the same property you will need to use a compund key comprising of postcode, poan, soan
+--To compare changes in price for the same property you will need to use a compund key comprising of postcode, poan, soan to create our own uprn
+
+ALTER TABLE hmlr_prices.prices
+ADD COLUMN myUPRN bigint;
 
 --There are a number of observations (33,000 in the october 2018 dataset) with no postcode
 --There are also a number of observations (3,700 in the october 2018 dataset) that have a postcode but no poan or soan.  
---These will be excluded from our analysis
+--These will be excluded from our analysis.  To do this i create a view that excludes them and use the view for analysis
 
---Create a table with the earliest price for each unique property 
-SELECT
-  UID, price, sale_date, postcode, paon, saon 
-  INTO hmlr_prices.pre_2004
-FROM (
-  SELECT
-    ROW_NUMBER() OVER (PARTITION BY postcode, paon, saon ORDER BY postcode, paon, saon, sale_date) AS r,
-    t.*
-  FROM
-    hmlr_prices.prices t) x
-WHERE
-  x.r <= 1 and x.postcode <>'' AND (x.paon <> '' OR x.saon <> '');
+CREATE OR REPLACE VIEW hmlr_prices.comparableprices AS
+ SELECT 
+ 	prices.myUPRN,
+	prices.uid,
+    prices.price,
+    prices.sale_date,
+    prices.postcode,
+    prices.type,
+    prices.new,
+    prices.duration,
+    prices.paon,
+    prices.saon,
+    prices.street,
+    prices.locality,
+    prices.town,
+    prices.district,
+    prices.county,
+    prices.category,
+    prices.status
+   FROM hmlr_prices.prices
+  WHERE prices.postcode::text <> ''::text AND (prices.paon::text <> ''::text OR prices.saon::text <> ''::text);
+
+--Get a distinct list of all properties and given them each a unique id (using row_number) that we will use as our own uprn
+--Store this in a table called UniqueProperties
+select DISTINCT on (postcode, paon, saon, street, locality, town, district, county) ROW_NUMBER() over() AS  myUPRN, postcode, paon, saon, street, locality, town, district, county
+INTO hmlr_prices.UniqueProperties
+FROM hmlr_prices.ComparablePrices 
   
-  
---Create a table with the latest price for each unique property 
-SELECT
-  UID, price, sale_date, postcode, paon, saon 
-  INTO hmlr_prices.post_2004
-FROM (
-  SELECT
-    ROW_NUMBER() OVER (PARTITION BY postcode, paon, saon ORDER BY postcode, paon, saon, sale_date DESC) AS r,
-    t.*
-  FROM
-    hmlr_prices.prices t) x
-WHERE
-  x.r <= 1 and x.postcode <>'' AND (x.paon <> '' OR x.saon <> '');
-  
---TO FIX the post and pre tables contain the same value suggesting the partitioning isn't sorting by date
+ --Now update the original prices table with our own UPRN for each of the properties by querying the UnqueProperties table created in the last step
+Update hmlr_prices.Prices A 
+SET myUPRN = (select myUPRN from hmlr_prices.UniqueProperties WHERE postcode = a.postcode AND paon = a.paon AND saon = a.saon )
+
+--Get the lowest and earliest and latest price for each property and store the result in a table
+
   
 --Create a table joining the earliest price to the latest house price and work out the difference
   
