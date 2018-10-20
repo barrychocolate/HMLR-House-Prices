@@ -31,6 +31,9 @@ COPY HMLR.prices FROM 'insert your path here\pp-complete.csv' CSV;
 ALTER TABLE hmlr_prices.prices
 ADD COLUMN myUPRN bigint;
 
+--Add an index to make the analysis more efficient later
+CREATE INDEX ON hmlr_prices.prices(myUPRN);
+
 --There are a number of observations (33,000 in the october 2018 dataset) with no postcode
 --There are also a number of observations (3,700 in the october 2018 dataset) that have a postcode but no poan or soan.  
 --These will be excluded from our analysis.  To do this i create a view that excludes them and use the view for analysis
@@ -69,4 +72,10 @@ SET myUPRN = (select myUPRN from hmlr_prices.UniqueProperties WHERE postcode = a
 
 --Get the lowest and earliest and latest price for each property and store the result in a table
 
+--TO FIX - Can't get the partition part to work to give min and max by myUPRN
+select myUPRN, min(sale_date)as min_date, max(sale_date) as max_date, min(price) as min_price, max(price) as max_price 
+--OVER(PARTITION BY myUPRN) 
+into price_analysis
+from hmlr_prices.ComparablePrices 
+group by myUPRN
   
