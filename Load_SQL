@@ -70,13 +70,3 @@ SET myUPRN = (select myUPRN from hmlr_prices.UniqueProperties WHERE postcode = a
 --Get the lowest and earliest and latest price for each property and store the result in a table
 
   
---Create a table joining the earliest price to the latest house price and work out the difference
-  
-SELECT t1.postcode, t1.paon, t1.saon,  t1.sale_date as earlies_sale_date, t2.sale_date as latest_sale_date, t1.price as Earliest_price, t2.price as latest_price,  (t2.price - t1.price) as price_diff 
-INTO hmlr_prices.price_analysis
-From hmlr_prices.post_2004 t1
-INNER Join hmlr_prices.post_2004 t2
-ON t1.postcode = t2.postcode
-	AND t1.paon = t2.paon
-	AND t1.saon = t2.saon
-	order by t1.postcode, t1.paon, t1.saon	;
